@@ -1,0 +1,206 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>GitHub Repositories Viewer</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 0;
+      padding: 0;
+    }
+
+    header {
+      background-color: #333;
+      color: white;
+      padding: 1rem;
+      text-align: center;
+    }
+
+    main {
+      max-width: 800px;
+      margin: 20px auto;
+      text-align: center;
+    }
+
+    .user-profile {
+      margin-bottom: 20px;
+    }
+
+    .user-profile img {
+      border-radius: 50%;
+      width: 100px;
+      height: 100px;
+    }
+
+    .loader {
+      border: 8px solid #f3f3f3;
+      border-top: 8px solid #3498db;
+      border-radius: 50%;
+      width: 50px;
+      height: 50px;
+      animation: spin 1s linear infinite;
+      margin: 20px auto;
+    }
+
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+
+    ul {
+      list-style: none;
+      padding: 0;
+    }
+
+    li {
+      border: 1px solid #ccc;
+      margin: 10px 0;
+      padding: 10px;
+      border-radius: 5px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .repo-details {
+      flex: 1;
+    }
+
+    .repo-details h3 {
+      margin: 0;
+    }
+
+    .pagination {
+      display: flex;
+      justify-content: center;
+      margin-top: 20px;
+    }
+
+    .pagination button {
+      margin: 0 5px;
+      padding: 5px 10px;
+      cursor: pointer;
+      border: 1px solid #ccc;
+      border-radius: 3px;
+      background-color: #fff;
+    }
+
+    .search-bar {
+      margin-bottom: 20px;
+    }
+  </style>
+</head>
+<body>
+
+  <header>
+    <h1>GitHub Repositories Viewer</h1>
+  </header>
+
+  <main>
+    <div class="search-bar">
+      <label for="username">Enter GitHub Username:</label>
+      <input type="text" id="username" placeholder="Enter username">
+      <button onclick="getUserData()">Search</button>
+    </div>
+
+    <div id="loader" class="loader" style="display: none;"></div>
+
+    <div class="user-profile" id="user-profile"></div>
+
+    <ul id="repo-list"></ul>
+
+    <div class="pagination" id="pagination"></div>
+  </main>
+
+  <script>
+    let currentPage = 1;
+    const perPage = 10;
+
+    function getUserData() {
+      const username = document.getElementById("username").value;
+      const userUrl = `https://api.github.com/users/${username}`;
+      const reposUrl = `https://api.github.com/users/${username}/repos?page=${currentPage}&per_page=${perPage}`;
+
+      document.getElementById("user-profile").innerHTML = "";
+      document.getElementById("repo-list").innerHTML = "";
+      document.getElementById("loader").style.display = "block";
+
+      fetch(userUrl)
+        .then(response => response.json())
+        .then(user => {
+          document.getElementById("loader").style.display = "none";
+          displayUserProfile(user);
+        })
+        .catch(error => console.error(error));
+
+      fetch(reposUrl)
+        .then(response => response.json())
+        .then(repositories => {
+          displayRepositories(repositories);
+          createPagination(repositories.length);
+        })
+        .catch(error => console.error(error));
+    }
+
+    function displayUserProfile(user) {
+      const userProfileContainer = document.getElementById("user-profile");
+
+      const profileImage = document.createElement("img");
+      profileImage.src = user.avatar_url;
+      userProfileContainer.appendChild(profileImage);
+
+      const userName = document.createElement("h2");
+      userName.textContent = user.login;
+      userProfileContainer.appendChild(userName);
+    }
+
+    function displayRepositories(repositories) {
+      const repoList = document.getElementById("repo-list");
+
+      repositories.forEach(repo => {
+        const listItem = document.createElement("li");
+
+        const repoDetails = document.createElement("div");
+        repoDetails.className = "repo-details";
+
+        const repoName = document.createElement("h3");
+        repoName.textContent = repo.name;
+        repoDetails.appendChild(repoName);
+
+        const repoDescription = document.createElement("p");
+        repoDescription.textContent = repo.description || "No description available";
+        repoDetails.appendChild(repoDescription);
+
+        listItem.appendChild(repoDetails);
+
+        const repoLink = document.createElement("a");
+        repoLink.href = repo.html_url;
+        repoLink.textContent = "View on GitHub";
+        listItem.appendChild(repoLink);
+
+        repoList.appendChild(listItem);
+      });
+    }
+
+    function createPagination(totalCount) {
+      const totalPages = Math.ceil(totalCount / perPage);
+      const paginationContainer = document.getElementById("pagination");
+      paginationContainer.innerHTML = "";
+
+      for (let i = 1; i <= totalPages; i++) {
+        const button = document.createElement("button");
+        button.textContent = i;
+        button.onclick = () => {
+          currentPage = i;
+          getUserData();
+        };
+        paginationContainer.appendChild(button);
+      }
+    }
+  </script>
+
+</body>
+</html>
